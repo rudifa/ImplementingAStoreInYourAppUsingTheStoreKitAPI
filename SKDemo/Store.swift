@@ -36,7 +36,7 @@ class Store: ObservableObject {
 
     @Published private(set) var purchasedIdentifiers = Set<String>()
 
-    var taskHandle: Task.Handle<Void, Error>? = nil
+    var updateListenerTask: Task<Void, Error>? = nil
 
     private let productIdToEmoji: [String: String]
     
@@ -60,22 +60,22 @@ class Store: ObservableObject {
         subscriptions = []
 
         //Start a transaction listener as close to app launch as possible so you don't miss any transactions.
-        taskHandle = listenForTransactions()
+        updateListenerTask = listenForTransactions()
 
-        async {
+        Task {
             //Initialize the store by starting a product request.
             await requestProducts()
         }
     }
 
-    func dealloc() {
-        taskHandle?.cancel()
+    deinit {
+        updateListenerTask?.cancel()
     }
 
-    func listenForTransactions() -> Task.Handle<Void, Error> {
-        return detach {
+    func listenForTransactions() -> Task<Void, Error> {
+        return Task.detached {
             //Iterate through any transactions which didn't come from a direct call to `purchase()`.
-            for await result in Transaction.listener {
+            for await result in Transaction.updates {
                 do {
                     let transaction = try self.checkVerified(result)
 
@@ -95,8 +95,8 @@ class Store: ObservableObject {
     @MainActor
     func requestProducts() async {
         do {
-            //Request products from the App Store using the identifiers defined above.
-            let storeProducts = try await Product.request(with: Set(productIdToEmoji.keys))
+            //Request products from the App Store using the identifiers defined in the Products.plist file.
+            let storeProducts = try await Product.products(for: productIdToEmoji.keys)
 
             var newCars: [Product] = []
             var newSubscriptions: [Product] = []

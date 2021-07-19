@@ -95,7 +95,7 @@ struct ListCellView: View {
 
     var buyButton: some View {
         Button(action: {
-            async {
+            Task {
                 await buy()
             }
         }) {
@@ -114,12 +114,12 @@ struct ListCellView: View {
             }
         }
         .onAppear {
-            async {
+            Task {
                 isPurchased = (try? await store.isPurchased(product.id)) ?? false
             }
         }
         .onChange(of: store.purchasedIdentifiers) { identifiers in
-            async {
+            Task {
                 isPurchased = identifiers.contains(product.id)
             }
         }

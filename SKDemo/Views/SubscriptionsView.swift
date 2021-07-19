@@ -40,13 +40,13 @@ struct SubscriptionsView: View {
             .listStyle(GroupedListStyle())
         }
         .onAppear {
-            async {
+            Task {
                 //When this view appears, get the latest subscription status.
                 await updateSubscriptionStatus()
             }
         }
         .onChange(of: store.purchasedIdentifiers) { _ in
-            async {
+            Task {
                 //When `purchasedIdentifiers` changes, get the latest subscription status.
                 await updateSubscriptionStatus()
             }
